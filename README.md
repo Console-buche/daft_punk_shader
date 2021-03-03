@@ -6,7 +6,7 @@
   </p>
 </p>
 <p align="center">
-  <img src="https://github.com/Console-buche/daft_punk_shader/blob/main/demo_daft_punk.gif?raw=true" alt="Le gid daft punk" />
+  <img src="https://github.com/Console-buche/daft_punk_shader/blob/main/demo.gif?raw=true" alt="Le gif daft punk" />
 </p>
 
 Tout est dans index.html 
