@@ -5,7 +5,7 @@
   <style>
     body {
       margin: 0;
-      background: #111111
+      padding: 0;
     }
 
     canvas {
@@ -20,7 +20,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r126/three.js"></script>
   <script>
 
-    const vShader = `
+    const vertexShader = `
 varying vec2 vUv;
 
 void main() {
@@ -29,7 +29,7 @@ void main() {
 
 }
 `
-    const fShader = `
+    const fragmentShader = `
 
 // Ta texture
 uniform sampler2D imagePourTexture;
@@ -70,7 +70,7 @@ void main() {
     vec4 tex = texture2D(imagePourTexture, clamped_scaled_UVs);
 
     //DEBUG : UNCOMMENT ci-dessous pour voir la geometry primitive cylindre utilisée
-    gl_FragColor = vec4(vec3(0.), 1.);
+    //gl_FragColor = vec4(vec3(0.), 1.);
     
     // règles d'affichage de la texture dans un if/else :
     // vu qu'on est en clamp mode, on ne consèrve dans le fragment que les pixels qui sont dans la zone texturée
@@ -88,10 +88,10 @@ void main() {
         //A partir de là, l'animation + texture est en place... Sky is the limit
         //Deux exemples, UNCOMMENT pour tester :
         //1. fade in / out
-        gl_FragColor.a -= pow(distance(vUv, vec2(0.5) ) * 2., 4.);   
+        //gl_FragColor.a -= pow(distance(vUv, vec2(0.5) ) * 2., 4.);   
 
         //2. effet boule à facette
-        gl_FragColor.rgb = vec3( boulafacette);
+        //gl_FragColor.rgb = vec3( boulafacette);
   
       } 
 }
@@ -131,19 +131,23 @@ void main() {
       // geometry & material
       const geometry = new THREE.CylinderGeometry(0.5, 0.5, .5, 64, 32, true, 0., Math.PI * .75);
       const material = new THREE.ShaderMaterial({
-        vertexShader: vShader,
-        fragmentShader: fShader,
+        vertexShader: vertexShader,
+        fragmentShader: fragmentShader,
         uniforms,
         transparent: true,
         side: THREE.DoubleSide
       });
 
       // mesh
-      const plane = new THREE.Mesh(geometry, material);
-      plane.scale.set(2, 2, 2)
-      plane.rotation.y = -.75;
-      plane.rotation.x = -.15;
-      scene.add(plane); // add to scene
+      const cylindre = new THREE.Mesh(geometry, material);
+      cylindre.scale.set(2, 2, 2)
+      cylindre.rotation.y = -.75;
+      cylindre.rotation.x = -.15;
+      scene.add(cylindre); // add to scene
+
+      // sphere
+      const sph = new THREE.Mesh(new THREE.SphereGeometry(0.55, 32, 32), new THREE.MeshNormalMaterial());
+      scene.add(sph)
 
       // render
       let count = 0;
@@ -153,6 +157,7 @@ void main() {
         count++;
         if (count % 5 == 0)
           uniforms.boulafacette.value = new THREE.Color(0xFFFFFF * Math.random())
+
         // animation loop
         requestAnimationFrame(render);
         renderer.render(scene, camera);
