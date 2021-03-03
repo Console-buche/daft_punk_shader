@@ -68,6 +68,9 @@ void main() {
     float cy = vUv.y - 0.25;
     vec2 clamped_scaled_UVs = vec2(cx , cy) * 2.;
     vec4 tex = texture2D(imagePourTexture, clamped_scaled_UVs);
+
+    //DEBUG : UNCOMMENT ci-dessous pour voir la geometry primitive cylindre utilisée
+    gl_FragColor = vec4(vec3(0.), 1.);
     
     // règles d'affichage de la texture dans un if/else :
     // vu qu'on est en clamp mode, on ne consèrve dans le fragment que les pixels qui sont dans la zone texturée
@@ -88,7 +91,7 @@ void main() {
         gl_FragColor.a -= pow(distance(vUv, vec2(0.5) ) * 2., 4.);   
 
         //2. effet boule à facette
-        //gl_FragColor = vec4( boulafacette , step(0.5, tex.a));
+        gl_FragColor.rgb = vec3( boulafacette);
   
       } 
 }
@@ -143,10 +146,13 @@ void main() {
       scene.add(plane); // add to scene
 
       // render
+      let count = 0;
       function render() {
         // update time uniform
         uniforms.time.value = -clock.getElapsedTime();
-        uniforms.boulafacette.value = new THREE.Color(0xFFFFFF * Math.random())
+        count++;
+        if (count % 5 == 0)
+          uniforms.boulafacette.value = new THREE.Color(0xFFFFFF * Math.random())
         // animation loop
         requestAnimationFrame(render);
         renderer.render(scene, camera);
