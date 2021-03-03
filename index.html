@@ -1,0 +1,162 @@
+<html>
+
+<head>
+  <title>Ma pierre à l'édifice - Console_buche --> BenjaminCode</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111111
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%
+    }
+  </style>
+</head>
+
+<body>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r126/three.js"></script>
+  <script>
+
+    const vShader = `
+varying vec2 vUv;
+
+void main() {
+  vUv = uv;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+
+}
+`
+    const fShader = `
+
+// Ta texture
+uniform sampler2D imagePourTexture;
+
+// Un compteur "temps" qui permet d'animer les valeurs
+uniform float time;
+
+// Couleur de fond
+uniform vec3 boulafacette;
+varying vec2 vUv;   //varyings, en provenance du vertex shader
+
+float fade_in_out(vec2 uv ) {
+    
+    float dCenter = 1.-distance(uv, vec2(0.5)) * 2.;   // pour chaque pixel, on calcule la distance par rapport au centre du mex
+    return dCenter;   // on return un RGBA avec du 0. pour les valeurs non modifiées (car le blend mode est additive)
+}
+
+
+void main() {
+
+    //deux floats pour positionner la texture en début d'anim. 
+    //x = 0. pour la positionner hors champ, sur la gauche
+    //y = 0.75 pour la centrer
+    float posX = 0.;
+    float posY = 0.75;
+    
+    //loop du temps
+    float t = mod(time * .5, 1.5) ;
+    //t = 0.; //UNCOMMENT pour retirer l'animation
+    
+    //animation de la coordonnée x
+    float pos_x = posX + t;
+
+    //clamp de la texture sur X, en fonction du temps de l'anim
+    float cx = clamp(vUv.x +.5, 0.0, pos_x+.5) - t;
+    float cy = vUv.y - 0.25;
+    vec2 clamped_scaled_UVs = vec2(cx , cy) * 2.;
+    vec4 tex = texture2D(imagePourTexture, clamped_scaled_UVs);
+    
+    // règles d'affichage de la texture dans un if/else :
+    // vu qu'on est en clamp mode, on ne consèrve dans le fragment que les pixels qui sont dans la zone texturée
+    if (    vUv.x <= pos_x                //max x (à droite de la tex)
+            && abs(pos_x - vUv.x)<= 0.5   //min x (à gauche)
+            && vUv.y <= posY              //max y (en haut)
+            && abs(posY - vUv.y) <= 0.5   //min y (en bas) <=== TUBE DE L'ÉTÉ
+        ) {
+        // Enfin on découpe le logo dans la color de fond. 
+        // La découpe est faite uniquement sur le canal alpha de la tex : on discard tout le transparent
+        // Pour un découpage bien sharp, on fait un alphatest : valeur arbitraire 0.5.
+        // ça permet d'éviter les artefacts de texture. Si un texel est pas totalement transparent, il est quand même considéré comme transparent (seuil 0.5 ici)
+        gl_FragColor = vec4( vec3(0.) , step(0.5, tex.a));
+        
+        //A partir de là, l'animation + texture est en place... Sky is the limit
+        //Deux exemples, UNCOMMENT pour tester :
+        //1. fade in / out
+        gl_FragColor.a -= pow(distance(vUv, vec2(0.5) ) * 2., 4.);   
+
+        //2. effet boule à facette
+        //gl_FragColor = vec4( boulafacette , step(0.5, tex.a));
+  
+      } 
+}
+`
+
+    // scene
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xFAFA00)
+
+    // clock pour timer
+    const clock = new THREE.Clock();
+
+    // camera
+    let aspect = window.innerWidth / window.innerHeight;
+    const camera = new THREE.PerspectiveCamera(15, aspect, 1, 1000);
+    camera.position.z = 10;
+
+    // renderer
+    const renderer = new THREE.WebGLRenderer({
+      alpha: true
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+
+    // texture
+    let taTexture = new THREE.TextureLoader().load("./daft.png", (tex) => {
+      taTexture.anisotropy = 16;
+
+      // uniforms du shader
+      const uniforms = {
+        imagePourTexture: { value: taTexture },
+        time: { value: 0.0 },
+        boulafacette: { value: new THREE.Color(0x000000) }
+      }
+
+      // geometry & material
+      const geometry = new THREE.CylinderGeometry(0.5, 0.5, .5, 64, 32, true, 0., Math.PI * .75);
+      const material = new THREE.ShaderMaterial({
+        vertexShader: vShader,
+        fragmentShader: fShader,
+        uniforms,
+        transparent: true,
+        side: THREE.DoubleSide
+      });
+
+      // mesh
+      const plane = new THREE.Mesh(geometry, material);
+      plane.scale.set(2, 2, 2)
+      plane.rotation.y = -.75;
+      plane.rotation.x = -.15;
+      scene.add(plane); // add to scene
+
+      // render
+      function render() {
+        // update time uniform
+        uniforms.time.value = -clock.getElapsedTime();
+        uniforms.boulafacette.value = new THREE.Color(0xFFFFFF * Math.random())
+        // animation loop
+        requestAnimationFrame(render);
+        renderer.render(scene, camera);
+      }
+
+      // démarrage du loop
+      render();
+
+    });
+  </script>
+</body>
+
+</html>
