@@ -44,7 +44,7 @@ varying vec2 vUv;   //varyings, en provenance du vertex shader
 float fade_in_out(vec2 uv ) {
     
     float dCenter = 1.-distance(uv, vec2(0.5)) * 2.;   // pour chaque pixel, on calcule la distance par rapport au centre du mex
-    return dCenter;   // on return un RGBA avec du 0. pour les valeurs non modifiées (car le blend mode est additive)
+    return dCenter;   // on return un float que l'on utilisera pour définir l'opacité du rgbA
 }
 
 
